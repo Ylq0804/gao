@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#EEF5FE">
+<title>小高工作台</title>
+<style>
+/* ==================== 主题变量：浅蓝色（默认浅色）+ 深色模式 ==================== */
+:root{
+  --bg:#EEF5FE;            /* 页面背景 */
+  --card:#FFFFFF;          /* 卡片背景 */
+  --field:#F4F9FF;         /* 输入框背景 */
+  --text:#26313F;          /* 主文字 */
+  --sub:#7B8CA3;           /* 次要文字 */
+  --line:#DCE9F7;          /* 边框线 */
+  --accent:#6FB0F5;        /* 主强调色（柔和蓝） */
+  --accent2:#CBE3FC;       /* 次强调色 */
+  --primary:#2E7DD1;       /* 主按钮 */
+  --primary-text:#F3F9FF;
+  --danger:#E8786F;        /* 危险色 / 支出 */
+  --warn:#E9B44C;
+  --ok:#4FB98B;            /* 收入 */
+  --shadow:0 8px 22px rgba(46,125,209,.10);
+  --r:18px;
+}
+html[data-theme="dark"]{
+  --bg:#0F1620;
+  --card:#18222E;
+  --field:#1D2937;
+  --text:#E4EEFA;
+  --sub:#8BA0B8;
+  --line:#283544;
+  --accent:#6FB0F5;
+  --accent2:#2A4258;
+  --primary:#6FB0F5;
+  --primary-text:#0C1621;
+  --danger:#E8786F;
+  --warn:#E9B44C;
+  --ok:#6FD3A6;
+  --shadow:0 8px 22px rgba(0,0,0,.40);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{
+  font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",system-ui,-apple-system,sans-serif;
+  background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(rgba(111,176,245,.14) 1.5px,transparent 1.5px);
+  background-size:24px 24px;
+  font-size:15px;line-height:1.5;
+}
+html[data-theme="dark"] body{background-image:radial-gradient(rgba(111,176,245,.07) 1.5px,transparent 1.5px)}
+
+/* ==================== 顶栏 ==================== */
+.topbar{
+  position:fixed;top:0;left:0;right:0;z-index:30;
+  display:flex;align-items:center;gap:10px;padding:0 12px;
+  padding-top:env(safe-area-inset-top);height:calc(56px + env(safe-area-inset-top));
+  background:var(--card);border-bottom:1px solid var(--line);
+}
+.topbar .title{font-size:17px;font-weight:800;flex:1;text-align:center;line-height:1.25}
+.topbar .title small{display:block;font-size:11px;font-weight:400;color:var(--sub);letter-spacing:.4px}
+.icon-btn{
+  width:42px;height:42px;flex:0 0 auto;border-radius:50%;font-size:18px;cursor:pointer;
+  background:var(--field);color:var(--text);border:2px solid var(--line);
+  display:flex;align-items:center;justify-content:center;transition:transform .12s;
+}
+.icon-btn:active{transform:scale(.92)}
+
+/* ==================== 侧边抽屉导航 ==================== */
+.drawer{
+  position:fixed;top:0;left:0;bottom:0;width:238px;z-index:40;
+  background:var(--card);border-right:1px solid var(--line);
+  transform:translateX(-105%);transition:transform .26s cubic-bezier(.4,0,.2,1);
+  padding:calc(14px + env(safe-area-inset-top)) 10px calc(14px + env(safe-area-inset-bottom));
+  overflow-y:auto;display:flex;flex-direction:column;
+}
+.drawer.open{transform:none;box-shadow:8px 0 30px rgba(20,40,70,.18)}
+.drawer .brand{font-size:16px;font-weight:800;padding:4px 12px 12px;color:var(--primary)}
+.drawer .brand small{display:block;font-size:11px;color:var(--sub);font-weight:400;margin-top:2px}
+.nav-item{
+  display:flex;align-items:center;gap:10px;padding:11px 13px;margin-bottom:3px;
+  border-radius:12px;font-size:15px;cursor:pointer;color:var(--text);user-select:none;
+  min-height:46px;transition:background .15s;
+}
+.nav-item .ico{font-size:17px;width:22px;text-align:center}
+.nav-item:active{background:var(--bg)}
+.nav-item.on{background:linear-gradient(120deg,var(--accent),var(--accent2));color:#12324F;font-weight:700}
+html[data-theme="dark"] .nav-item.on{color:#0C1621}
+.drawer .foot{margin-top:auto;padding:12px;font-size:11px;color:var(--sub);line-height:1.7;border-top:1px solid var(--line)}
+.mask{
+  position:fixed;inset:0;background:rgba(16,30,48,.40);z-index:35;
+  opacity:0;pointer-events:none;transition:opacity .26s;
+}
+.mask.show{opacity:1;pointer-events:auto}
+
+/* ==================== 主区域 ==================== */
+main{padding:calc(70px + env(safe-area-inset-top)) 12px calc(30px + env(safe-area-inset-bottom));
+     max-width:820px;margin:0 auto}
+.view{display:none;animation:fade .22s ease}
+.view.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.page-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:0 2px 12px}
+.page-head h2{font-size:19px}
+.page-head .hint{font-size:12px;color:var(--sub)}
+
+/* 桌面端：侧边栏常驻 */
+@media(min-width:920px){
+  .drawer{transform:none;box-shadow:none}
+  .mask{display:none}
+  #btnMenu{display:none}
+  .topbar{left:238px}
+  .topbar .title{font-size:19px}
+  main{margin-left:238px}
+}
+
+/* ==================== 卡片 ==================== */
+.card{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+  box-shadow:var(--shadow);padding:14px;margin-bottom:14px;
+}
+.card h3{font-size:15px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.card h3 .tag{margin-left:auto}
+.sub{font-size:12px;color:var(--sub)}
+.muted{color:var(--sub)}
+.center{text-align:center}
+.mt{margin-top:10px}
+.pre{white-space:pre-wrap;word-break:break-word}
+.nowrap{white-space:nowrap}
+
+/* ==================== 首页 ==================== */
+.hero{
+  background:linear-gradient(135deg,var(--accent) 0%,#8FC8FF 55%,var(--accent2) 100%);
+  border:none;color:#12324F;text-align:center;padding:20px 16px 18px;
+}
+html[data-theme="dark"] .hero{background:linear-gradient(135deg,#26465F 0%,#2A4258 55%,#22384A 100%);color:var(--text)}
+.hero .hello{font-size:15px;font-weight:700;opacity:.9}
+.hero .clock{font-size:40px;font-weight:800;letter-spacing:1px;line-height:1.15;font-variant-numeric:tabular-nums;margin:2px 0 2px}
+.hero .date{font-size:13px;opacity:.85}
+.hero .tip{font-size:12.5px;opacity:.9;margin-top:8px}
+
+.quick{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.quick button{
+  min-height:86px;border-radius:var(--r);border:1px solid var(--line);background:var(--card);
+  box-shadow:var(--shadow);color:var(--text);font-family:inherit;font-size:13px;font-weight:700;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;
+  padding:8px 4px;
+}
+.quick button:active{transform:scale(.97)}
+.quick button .ico{font-size:24px}
+.quick button .d{font-size:11px;font-weight:400;color:var(--sub)}
+
+/* ==================== 统计卡片 ==================== */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:10px;margin-bottom:14px}
+.stat{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+  box-shadow:var(--shadow);padding:12px 12px 13px;min-width:0;
+}
+.stat .k{font-size:12px;color:var(--sub);margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat .v{font-size:19px;font-weight:800;color:var(--primary);letter-spacing:-.2px}
+.stat .u{font-size:11px;color:var(--sub);font-weight:400;margin-left:3px}
+html[data-theme="dark"] .stat .v{color:var(--accent)}
+.stat .v.ok{color:var(--ok)}
+.stat .v.bad{color:var(--danger)}
+
+/* ==================== 列表项 ==================== */
+.list{display:flex;flex-direction:column;gap:9px;margin-top:10px}
+.item{
+  display:flex;gap:10px;align-items:flex-start;padding:11px 12px;
+  background:var(--field);border:1px solid var(--line);border-radius:14px;
+}
+.item .main{flex:1;min-width:0}
+.item .l1{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.item .l1 b{font-size:15px}
+.item .amt{font-size:16px;font-weight:800;margin-left:auto;white-space:nowrap}
+.item .amt.in{color:var(--ok)}
+.item .amt.out{color:var(--danger)}
+.item .meta{font-size:12px;color:var(--sub);margin-top:3px;word-break:break-word}
+.item .acts{display:flex;flex-direction:column;gap:6px;flex:0 0 auto}
+.pill{
+  display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;
+  background:var(--accent2);color:#12324F;white-space:nowrap;
+}
+html[data-theme="dark"] .pill{color:var(--accent)}
+.pill.in{background:rgba(79,185,139,.20);color:#1F6E4F}
+html[data-theme="dark"] .pill.in{background:rgba(111,211,166,.20);color:#7EDCB0}
+.pill.out{background:rgba(232,120,111,.20);color:#A8403A}
+html[data-theme="dark"] .pill.out{background:rgba(232,120,111,.22);color:#F0A39D}
+.pill.gray{background:var(--bg);color:var(--sub);border:1px solid var(--line)}
+.empty{padding:22px 10px;text-align:center;color:var(--sub);font-size:13px}
+.empty .big{font-size:30px;display:block;margin-bottom:6px;opacity:.6}
+
+/* 图例 */
+.legend{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.legend .li{display:flex;align-items:center;gap:8px;font-size:13px}
+.legend .dot{width:11px;height:11px;border-radius:4px;flex:0 0 auto}
+.legend .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.legend .pc{color:var(--sub);font-size:12px;white-space:nowrap}
+.legend .vv{font-weight:700;white-space:nowrap}
+
+/* ==================== 按钮 ==================== */
+.btn{
+  min-height:46px;padding:0 16px;border-radius:12px;font-size:15px;font-family:inherit;font-weight:700;
+  cursor:pointer;border:1.5px solid transparent;display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  background:var(--field);color:var(--text);transition:transform .12s,opacity .15s;
+}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:var(--primary);color:var(--primary-text)}
+.btn.ok{background:var(--ok);color:#fff}
+.btn.out{background:var(--danger);color:#fff}
+.btn.line{background:transparent;border-color:var(--line);color:var(--text)}
+.btn.ghost{background:var(--bg);color:var(--sub);border-color:var(--line);font-weight:600}
+.btn.block{width:100%}
+.mini{
+  min-height:32px;padding:0 10px;font-size:12.5px;font-weight:600;border-radius:9px;cursor:pointer;
+  background:var(--card);color:var(--text);border:1px solid var(--line);font-family:inherit;white-space:nowrap;
+  display:inline-flex;align-items:center;justify-content:center;gap:4px;
+}
+.mini:active{opacity:.7}
+.mini.danger{color:var(--danger);border-color:rgba(232,120,111,.45)}
+.mini.tiny{min-height:28px;padding:0 8px;font-size:12px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row>*{min-width:0}
+.row>.grow{flex:1 1 120px}
+.row>.btn{flex:0 0 auto}
+.row .btn.block{flex:1 1 130px}
+
+/* ==================== 表单控件 ==================== */
+input,select,textarea{
+  width:100%;min-height:46px;padding:9px 11px;font-size:15px;font-family:inherit;
+  color:var(--text);background:var(--field);border:1.5px solid var(--line);border-radius:11px;outline:none;
+  transition:border-color .15s;
+}
+textarea{min-height:74px;resize:vertical;line-height:1.5}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+select{appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,var(--sub) 50%),linear-gradient(135deg,var(--sub) 50%,transparent 50%);
+  background-position:calc(100% - 18px) 20px,calc(100% - 13px) 20px;background-size:5px 5px,5px 5px;background-repeat:no-repeat;
+  padding-right:34px}
+label.fl{display:block;font-size:13px;color:var(--sub);margin-bottom:11px}
+label.fl>span{display:block;margin-bottom:5px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pw-wrap{position:relative}
+.pw-wrap>input{padding-right:64px}
+.pw-wrap>button{position:absolute;right:7px;top:50%;transform:translateY(-50%)}
+
+/* ==================== 图表 ==================== */
+.chart-wrap{position:relative;width:100%;margin-top:10px}
+canvas{display:block;width:100%;height:200px}
+
+/* ==================== 分段控制器 ==================== */
+.seg{display:flex;gap:4px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:4px;margin-top:10px}
+.seg button{
+  flex:1;min-height:38px;border:none;border-radius:9px;background:transparent;color:var(--sub);
+  font-size:13.5px;font-weight:700;font-family:inherit;cursor:pointer;
+}
+.seg button.on{background:var(--card);color:var(--primary);box-shadow:0 2px 8px rgba(46,125,209,.14)}
+html[data-theme="dark"] .seg button.on{color:var(--accent)}
+.seg button.on.ok{color:var(--ok)}
+.seg button.on.out{color:var(--danger)}
+
+/* 汇总行 */
+.sum-row{
+  display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;
+  background:var(--field);border:1px solid var(--line);font-size:13.5px;
+}
+.sum-row .n{flex:1;min-width:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sum-row .d{font-size:12px;color:var(--sub);white-space:nowrap}
+.sum-row .v{font-size:12px;color:var(--primary);font-weight:700;white-space:nowrap}
+html[data-theme="dark"] .sum-row .v{color:var(--accent)}
+
+/* ==================== 弹窗 ==================== */
+.modal-mask{
+  position:fixed;inset:0;z-index:60;background:rgba(16,30,48,.46);
+  display:flex;align-items:flex-end;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .2s;
+}
+.modal-mask.show{opacity:1;pointer-events:auto}
+.modal{
+  width:100%;max-width:520px;background:var(--card);border-radius:20px 20px 0 0;
+  border:1px solid var(--line);border-bottom:none;max-height:88vh;display:flex;flex-direction:column;
+  transform:translateY(14px);transition:transform .24s cubic-bezier(.4,0,.2,1);
+}
+.modal-mask.show .modal{transform:none}
+.modal-head{display:flex;align-items:center;gap:8px;padding:14px 14px 10px;border-bottom:1px solid var(--line)}
+.modal-head b{font-size:16px;flex:1}
+.modal-body{padding:14px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.modal-foot{display:flex;gap:10px;padding:10px 14px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
+.modal-foot .btn{flex:1}
+@media(min-width:600px){
+  .modal-mask{align-items:center;padding:20px}
+  .modal{border-radius:20px;border-bottom:1px solid var(--line)}
+  .modal-foot{padding-bottom:14px}
+}
+
+/* ==================== Toast ==================== */
+#toast{
+  position:fixed;left:50%;bottom:calc(30px + env(safe-area-inset-bottom));transform:translate(-50%,14px);
+  background:rgba(30,44,62,.94);color:#fff;font-size:13.5px;padding:10px 16px;border-radius:22px;
+  z-index:80;opacity:0;pointer-events:none;transition:all .22s;max-width:82vw;text-align:center;
+}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+
+<!-- ==================== 顶栏 ==================== -->
+<header class="topbar">
+  <button class="icon-btn" id="btnMenu" aria-label="打开菜单">☰</button>
+  <div class="title" id="pageTitle">小高工作台<small>今日概览</small></div>
+  <button class="icon-btn" id="themeBtn" aria-label="切换深色模式">🌙</button>
+</header>
+
+<!-- ==================== 侧边抽屉 ==================== -->
+<nav class="drawer" id="drawer">
+  <div class="brand">小高工作台<small>个人效率 · 本地数据</small></div>
+  <div class="nav-item on" data-view="home"><span class="ico">🏠</span>首页</div>
+  <div class="nav-item" data-view="ledger"><span class="ico">📒</span>账本</div>
+  <div class="nav-item" data-view="work"><span class="ico">⏱️</span>工作</div>
+  <div class="nav-item" data-view="pw"><span class="ico">🔐</span>密码管理</div>
+  <div class="foot">
+    数据仅保存在本机浏览器<br>
+    localStorage 中，清理缓存<br>
+    或更换浏览器会丢失全部数据
+  </div>
+</nav>
+<div class="mask" id="mask"></div>
+
+<!-- ==================== 主内容 ==================== -->
+<main>
+
+  <!-- ========== 1. 首页 ========== -->
+  <section class="view on" id="view-home">
+    <div class="card hero">
+      <div class="hello" id="homeHello">你好呀</div>
+      <div class="clock" id="homeClock">--:--:--</div>
+      <div class="date" id="homeDate">——</div>
+      <div class="tip" id="homeTip">今天也要元气满满哦～</div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="k">本月账本结余</div><div class="v" id="homeBalance">¥0.00</div></div>
+      <div class="stat"><div class="k">本月累计工作时长</div><div class="v" id="homeWorkHours">0<span class="u">小时</span></div></div>
+    </div>
+
+    <div class="card">
+      <h3>📊 本月账本</h3>
+      <div class="row mt">
+        <span class="pill in" id="homeIncome">收入 ¥0.00</span>
+        <span class="pill out" id="homeExpense">支出 ¥0.00</span>
+      </div>
+      <div class="sub mt" id="homeLedgerCount">本月共 0 笔记录</div>
+    </div>
+
+    <div class="card">
+      <h3>🚀 快捷入口</h3>
+      <div class="quick mt">
+        <button data-act="go" data-view="ledger"><span class="ico">📒</span>账本<span class="d">收支记录</span></button>
+        <button data-act="go" data-view="work"><span class="ico">⏱️</span>工作<span class="d">上下班时长</span></button>
+        <button data-act="go" data-view="pw"><span class="ico">🔐</span>密码<span class="d">账号管理</span></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== 2. 账本 ========== -->
+  <section class="view" id="view-ledger">
+    <div class="page-head">
+      <h2>📒 账本</h2>
+      <span class="hint">收入 / 支出 · 按月统计</span>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="k">本月收入</div><div class="v ok" id="ledIncome">¥0.00</div></div>
+      <div class="stat"><div class="k">本月支出</div><div class="v bad" id="ledExpense">¥0.00</div></div>
+      <div class="stat"><div class="k">本月结余</div><div class="v" id="ledBalance">¥0.00</div></div>
+    </div>
+
+    <div class="card">
+      <h3>➕ 记一笔</h3>
+      <div class="row mt">
+        <button class="btn ok block" data-act="add-in">＋ 记收入</button>
+        <button class="btn out block" data-act="add-out">－ 记支出</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>🥧 支出分类占比</h3>
+      <div class="sub" id="pieHint">按支出分类统计所选月份</div>
+      <div class="chart-wrap"><canvas id="pieChart" height="200"></canvas></div>
+      <div class="legend" id="pieLegend"></div>
+    </div>
+
+    <div class="card">
+      <h3>🗓️ 月度明细
+        <span class="tag sub" id="ledMonthCount">0 笔</span>
+      </h3>
+      <div class="row mt">
+        <select class="grow" id="ledMonthSel" aria-label="选择月份"></select>
+      </div>
+      <div class="row mt">
+        <span class="pill in" id="ledMonthIn">收入 ¥0.00</span>
+        <span class="pill out" id="ledMonthOut">支出 ¥0.00</span>
+        <span class="pill gray" id="ledMonthBal">结余 ¥0.00</span>
+      </div>
+      <div class="list" id="ledList"></div>
+    </div>
+  </section>
+
+  <!-- ========== 3. 工作 ========== -->
+  <section class="view" id="view-work">
+    <div class="page-head">
+      <h2>⏱️ 工作</h2>
+      <span class="hint">自动计算 · 周月汇总</span>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="k">本周工作时长</div><div class="v" id="wkWork">0<span class="u">小时</span></div></div>
+      <div class="stat"><div class="k">本月工作时长</div><div class="v" id="moWork">0<span class="u">小时</span></div></div>
+      <div class="stat"><div class="k">累计记录</div><div class="v" id="workCount2">0<span class="u">天</span></div></div>
+    </div>
+
+    <div class="card">
+      <h3>➕ 新增记录 <span class="tag sub">下班早于上班按跨天计算</span></h3>
+      <button class="btn primary block mt" data-act="add-work">记录今天的上下班时间</button>
+    </div>
+
+    <div class="card">
+      <h3>📈 工作时长汇总</h3>
+      <div class="seg" id="workSeg">
+        <button class="on" data-seg="week">按周汇总</button>
+        <button data-seg="month">按月汇总</button>
+      </div>
+      <div class="list" id="workSum"></div>
+    </div>
+
+    <div class="card">
+      <h3>🕘 历史记录 <span class="tag sub" id="workCount">0 条</span></h3>
+      <div class="list" id="workList"></div>
+    </div>
+  </section>
+
+  <!-- ========== 4. 密码管理 ========== -->
+  <section class="view" id="view-pw">
+    <div class="page-head">
+      <h2>🔐 密码管理</h2>
+      <span class="hint">本地保存 · 掩码显示</span>
+    </div>
+
+    <div class="card">
+      <h3>🔍 搜索筛选</h3>
+      <input type="search" id="pwSearch" class="mt" placeholder="输入平台名称 / 账号 / 备注关键词" autocomplete="off">
+      <button class="btn primary block mt" data-act="add-pw">新增账号</button>
+    </div>
+
+    <div class="card">
+      <h3>📇 账号列表 <span class="tag sub" id="pwCount">0 条</span></h3>
+      <div class="list" id="pwList"></div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ==================== 表单弹窗 ==================== -->
+<div class="modal-mask" id="modalMask">
+  <div class="modal">
+    <div class="modal-head">
+      <b id="modalTitle">标题</b>
+      <button class="icon-btn" id="modalClose" aria-label="关闭">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-foot">
+      <button class="btn ghost" id="modalCancel">取消</button>
+      <button class="btn primary" id="modalOk">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 确认弹窗 ==================== -->
+<div class="modal-mask" id="cfmMask">
+  <div class="modal">
+    <div class="modal-head"><b id="cfmTitle">确认操作</b></div>
+    <div class="modal-body"><p id="cfmText" style="font-size:14.5px"></p></div>
+    <div class="modal-foot">
+      <button class="btn ghost" id="cfmCancel">取消</button>
+      <button class="btn danger" id="cfmOk">确定</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ==================================================================
+   小高工作台 —— 单文件应用，数据保存在 localStorage
+   模块：首页 / 账本（收入+支出，饼图）/ 工作（上下班时长）/ 密码管理
+   ================================================================== */
+
+/* ---------------- 通用工具 ---------------- */
+const $  = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const pad2 = n => String(n).padStart(2, '0');
+const uid  = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const esc  = s => String(s === null || s === undefined ? '' : s)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+const WD = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+
+const todayStr = () => { const d = new Date(); return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); };
+const dateObj  = ds => new Date(ds + 'T00:00:00');
+const weekName = ds => WD[dateObj(ds).getDay()];
+const monthOf  = ds => ds.slice(0, 7);
+const monthLabel = ym => ym.slice(0, 4) + '年' + Number(ym.slice(5, 7)) + '月';
+const weekStartOf = ds => {
+  const d = dateObj(ds);
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));      // 以周一为一周起点
+  return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+};
+const weekLabel = k => Number(k.slice(5, 7)) + '月' + Number(k.slice(8, 10)) + '日 起的一周';
+
+const money = n => '¥' + Number(n || 0).toFixed(2);
+const moneyShort = n => {
+  n = Number(n || 0);
+  if (n >= 10000) return (n / 10000).toFixed(1) + '万';
+  return String(Math.round(n));
+};
+const minutesOf = v => {
+  if (!v) return null;
+  const p = String(v).split(':').map(Number);
+  if (isNaN(p[0]) || isNaN(p[1])) return null;
+  return p[0] * 60 + p[1];
+};
+const durMin = (a, b) => {
+  const s = minutesOf(a), e = minutesOf(b);
+  if (s === null || e === null) return 0;
+  let d = e - s;
+  if (d < 0) d += 1440;                                 // 跨天
+  return d;
+};
+const fmtDur = min => {
+  min = Math.max(0, Math.round(min || 0));
+  const h = Math.floor(min / 60), m = min % 60;
+  if (h && m) return h + '小时' + m + '分钟';
+  if (h) return h + '小时';
+  return m + '分钟';
+};
+const hoursText = min => (Math.round(((min || 0) / 60) * 10) / 10).toString();
+const round2 = n => Math.round(Number(n || 0) * 100) / 100;
+
+/* ---------------- 数据存储 ---------------- */
+const KEYS = { ledger: 'xgg_ledger', work: 'xgg_work', pw: 'xgg_pw', theme: 'xgg_theme' };
+const DB = { ledger: [], work: [], pw: [] };
+
+function loadAll() {
+  ['ledger', 'work', 'pw'].forEach(k => {
+    try {
+      const raw = JSON.parse(localStorage.getItem(KEYS[k]) || '[]');
+      DB[k] = Array.isArray(raw) ? raw : [];
+    } catch (e) { DB[k] = []; }
+  });
+}
+function persist(k) {
+  try { localStorage.setItem(KEYS[k], JSON.stringify(DB[k])); }
+  catch (e) { toast('保存失败：本地存储空间可能已满'); }
+}
+
+/* ---------------- 提示 & 复制 ---------------- */
+let toastTimer;
+function toast(msg) {
+  const el = $('#toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 1900);
+}
+function copyText(text, label) {
+  const done = () => toast('已复制' + (label || ''));
+  const fallback = () => {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.top = '-1000px'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta); done();
+  };
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(done).catch(fallback);
+  } else fallback();
+}
+
+/* ---------------- 弹窗 ---------------- */
+let modalOkFn = null;
+function openModal(title, bodyHTML, okFn, okText) {
+  $('#modalTitle').textContent = title;
+  $('#modalBody').innerHTML = bodyHTML;
+  $('#modalOk').textContent = okText || '保存';
+  modalOkFn = okFn;
+  $('#modalMask').classList.add('show');
+  const first = $('#modalBody input, #modalBody select, #modalBody textarea');
+  if (first) setTimeout(() => first.focus({ preventScroll: true }), 160);
+}
+function closeModal() {
+  $('#modalMask').classList.remove('show');
+  modalOkFn = null;
+}
+$('#modalOk').onclick = () => {
+  if (typeof modalOkFn === 'function' && modalOkFn() === false) return;
+  closeModal();
+};
+$('#modalClose').onclick = closeModal;
+$('#modalCancel').onclick = closeModal;
+$('#modalMask').addEventListener('click', e => { if (e.target === $('#modalMask')) closeModal(); });
+$('#modalBody').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') { e.preventDefault(); $('#modalOk').click(); }
+});
+
+let cfmFn = null;
+function askConfirm(text, cb, title, okText) {
+  $('#cfmTitle').textContent = title || '确认删除';
+  $('#cfmText').textContent = text;
+  $('#cfmOk').textContent = okText || '删除';
+  cfmFn = cb;
+  $('#cfmMask').classList.add('show');
+}
+$('#cfmOk').onclick = () => {
+  $('#cfmMask').classList.remove('show');
+  const fn = cfmFn; cfmFn = null;
+  if (typeof fn === 'function') fn();
+};
+$('#cfmCancel').onclick = () => { $('#cfmMask').classList.remove('show'); cfmFn = null; };
+
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if ($('#cfmMask').classList.contains('show')) { $('#cfmMask').classList.remove('show'); cfmFn = null; }
+  else if ($('#modalMask').classList.contains('show')) closeModal();
+});
+
+/* ---------------- 主题 ---------------- */
+function applyTheme(t) {
+  document.documentElement.dataset.theme = t;
+  localStorage.setItem(KEYS.theme, t);
+  $('#themeBtn').textContent = t === 'dark' ? '☀️' : '🌙';
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = t === 'dark' ? '#0F1620' : '#EEF5FE';
+  if (current === 'ledger') drawPie();
+}
+$('#themeBtn').onclick = () => {
+  const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  applyTheme(next);
+  toast(next === 'dark' ? '已切换深色模式' : '已切换浅色模式');
+};
+
+/* ---------------- 导航 ---------------- */
+const VIEW_META = {
+  home:   { title: '小高工作台', sub: '今日概览 · 快捷入口' },
+  ledger: { title: '账本',       sub: '收入支出 · 按月统计' },
+  work:   { title: '工作',       sub: '上下班时长 · 周月汇总' },
+  pw:     { title: '密码管理',   sub: '本地保存 · 掩码查看' }
+};
+let current = 'home';
+function go(view) {
+  if (!VIEW_META[view]) return;
+  current = view;
+  $$('.view').forEach(el => el.classList.toggle('on', el.id === 'view-' + view));
+  $$('.nav-item').forEach(el => el.classList.toggle('on', el.dataset.view === view));
+  $('#pageTitle').innerHTML = esc(VIEW_META[view].title) + '<small>' + esc(VIEW_META[view].sub) + '</small>';
+  if (window.innerWidth < 920) closeDrawer();
+  window.scrollTo({ top: 0 });
+  if (view === 'home')   renderHome();
+  if (view === 'ledger') { renderLedger(); drawPie(); }
+  if (view === 'work')   renderWork();
+  if (view === 'pw')     renderPw();
+}
+$$('.nav-item').forEach(el => el.addEventListener('click', () => go(el.dataset.view)));
+function openDrawer() { $('#drawer').classList.add('open'); $('#mask').classList.add('show'); }
+function closeDrawer() { $('#drawer').classList.remove('open'); $('#mask').classList.remove('show'); }
+$('#btnMenu').onclick = () => { $('#drawer').classList.contains('open') ? closeDrawer() : openDrawer(); };
+$('#mask').onclick = closeDrawer;
+
+/* ==================================================================
+   模块一：首页
+   ================================================================== */
+const TIPS = [
+  '今天也要元气满满哦～',
+  '慢慢来，比较快。',
+  '记一笔，心里就有数了。',
+  '早睡早起，效率翻倍。',
+  '完成比完美更重要。',
+  '小事坚持做，就是了不起。'
+];
+function greetingOf(h) {
+  if (h < 6)  return { hello: '夜深了，早点休息', emoji: '🌙' };
+  if (h < 9)  return { hello: '早上好呀', emoji: '🌤️' };
+  if (h < 12) return { hello: '上午好', emoji: '☀️' };
+  if (h < 14) return { hello: '中午好，吃饭啦', emoji: '🍚' };
+  if (h < 18) return { hello: '下午好', emoji: '☕' };
+  if (h < 23) return { hello: '晚上好', emoji: '🌆' };
+  return { hello: '夜深了，早点休息', emoji: '🌙' };
+}
+let lastHello = '';
+function tickClock() {
+  const d = new Date();
+  $('#homeClock').textContent = pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
+  $('#homeDate').textContent = d.getFullYear() + '年' + (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + WD[d.getDay()];
+  const g = greetingOf(d.getHours());
+  if (g.hello !== lastHello) {
+    lastHello = g.hello;
+    $('#homeHello').textContent = g.emoji + ' ' + g.hello;
+    $('#homeTip').textContent = TIPS[((d.getFullYear() * 372 + (d.getMonth() + 1) * 31 + d.getDate()) % TIPS.length)];
+  }
+}
+
+const ledgerSum = (list, type) => list
+  .filter(r => r.type === type)
+  .reduce((a, b) => a + Number(b.amount || 0), 0);
+
+function renderHome() {
+  const curM = monthOf(todayStr());
+  const rows = DB.ledger.filter(r => monthOf(r.date) === curM);
+  const inc = ledgerSum(rows, 'in'), exp = ledgerSum(rows, 'out');
+  const bal = inc - exp;
+  const workMin = DB.work.filter(r => monthOf(r.date) === curM).reduce((a, b) => a + durMin(b.start, b.end), 0);
+
+  const balEl = $('#homeBalance');
+  balEl.textContent = money(bal);
+  balEl.className = 'v ' + (bal > 0 ? 'ok' : bal < 0 ? 'bad' : '');
+  $('#homeWorkHours').innerHTML = hoursText(workMin) + '<span class="u">小时</span>';
+  $('#homeIncome').textContent  = '收入 ' + money(inc);
+  $('#homeExpense').textContent = '支出 ' + money(exp);
+  $('#homeLedgerCount').textContent = monthLabel(curM) + '共 ' + rows.length + ' 笔记录';
+  tickClock();
+}
+
+/* ==================================================================
+   模块二：账本（收入 + 支出）
+   ================================================================== */
+const IN_SOURCES  = ['工资', '奖金', '兼职', '红包', '理财收益', '报销', '退款', '其他'];
+const OUT_CATS    = ['餐饮', '交通', '购物', '居住', '娱乐', '医疗', '学习', '人情往来', '旅行', '通讯', '其他'];
+const PIE_COLORS  = ['#6FB0F5', '#7FD3C9', '#F2B36B', '#E88C8C', '#B49BE8',
+                     '#8ED17E', '#F2A0C4', '#8FB8D9', '#C9A96B', '#A0AEC0', '#D9A6E0'];
+const UNCAT = '未分类';
+
+let ledMonth = monthOf(todayStr());
+let modalType = 'in';
+
+function ledgerFormHTML(rec) {
+  const type = rec ? rec.type : modalType;
+  const cats = type === 'in' ? IN_SOURCES : OUT_CATS;
+  return `
+    <div class="seg" id="typeSeg">
+      <button type="button" data-type="in" class="${type === 'in' ? 'on ok' : ''}">收入</button>
+      <button type="button" data-type="out" class="${type === 'out' ? 'on out' : ''}">支出</button>
+    </div>
+    <label class="fl" style="margin-top:12px"><span>日期 *</span>
+      <input type="date" id="f_date" value="${esc(rec ? rec.date : todayStr())}">
+    </label>
+    <label class="fl"><span>金额（元）*</span>
+      <input type="number" id="f_amount" inputmode="decimal" step="0.01" min="0" placeholder="0.00" value="${rec ? esc(rec.amount) : ''}">
+    </label>
+    <label class="fl"><span id="catLabel">${type === 'in' ? '收入来源' : '支出分类'}${type === 'out' ? ' *' : ''}</span>
+      <input type="text" id="f_cat" maxlength="20" list="catList" autocomplete="off"
+             placeholder="${type === 'in' ? '如：工资 / 兼职 / 红包' : '如：餐饮 / 交通 / 购物'}"
+             value="${rec ? esc(rec.cat) : ''}">
+    </label>
+    <datalist id="catList">${cats.map(c => '<option value="' + esc(c) + '"></option>').join('')}</datalist>
+    <label class="fl"><span>备注</span>
+      <textarea id="f_note" maxlength="100" rows="2" placeholder="选填">${rec ? esc(rec.note) : ''}</textarea>
+    </label>`;
+}
+function syncLedgerForm() {
+  const isOut = modalType === 'out';
+  const label = $('#catLabel');
+  isOut ? label.textContent = '支出分类 *' : label.textContent = '收入来源';
+  const cats = isOut ? OUT_CATS : IN_SOURCES;
+  $('#f_cat').placeholder = isOut ? '如：餐饮 / 交通 / 购物' : '如：工资 / 兼职 / 红包';
+  $('#catList').innerHTML = cats.map(c => '<option value="' + esc(c) + '"></option>').join('');
+  $$('#typeSeg button').forEach(b => {
+    const on = b.dataset.type === modalType;
+    b.className = on ? 'on ' + (b.dataset.type === 'out' ? 'out' : 'ok') : '';
+  });
+}
+$('#modalBody').addEventListener('click', e => {
+  const seg = e.target.closest('#typeSeg button');
+  if (seg) { modalType = seg.dataset.type; syncLedgerForm(); return; }
+  if (e.target.id !== 'fPwEye') return;
+  const inp = $('#f_password');
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  e.target.textContent = show ? '隐藏' : '显示';
+});
+
+function openLedgerForm(type, id) {
+  const rec = id ? DB.ledger.find(r => r.id === id) : null;
+  modalType = rec ? rec.type : type;
+  openModal(rec ? '编辑账目' : (modalType === 'in' ? '记一笔收入' : '记一笔支出'), ledgerFormHTML(rec), () => {
+    const date = $('#f_date').value;
+    const amount = parseFloat($('#f_amount').value);
+    const cat = $('#f_cat').value.trim();
+    const note = $('#f_note').value.trim();
+    if (!date) { toast('请选择日期'); return false; }
+    if (!(amount > 0)) { toast('请输入大于 0 的金额'); return false; }
+    if (modalType === 'out' && !cat) { toast('请填写支出分类'); return false; }
+    const data = { type: modalType, date, amount: round2(amount), cat, note };
+    if (rec) Object.assign(rec, data);
+    else DB.ledger.push(Object.assign({ id: uid(), created: Date.now() }, data));
+    persist('ledger');
+    ledMonth = monthOf(date);
+    renderLedger(); drawPie(); renderHome();
+    toast(rec ? '已更新账目' : (data.type === 'in' ? '已记一笔收入' : '已记一笔支出'));
+  });
+}
+
+function renderLedger() {
+  const curM = monthOf(todayStr());
+  const curRows = DB.ledger.filter(r => monthOf(r.date) === curM);
+  const inc = ledgerSum(curRows, 'in'), exp = ledgerSum(curRows, 'out');
+
+  $('#ledIncome').textContent = money(inc);
+  $('#ledExpense').textContent = money(exp);
+  const balEl = $('#ledBalance');
+  balEl.textContent = money(inc - exp);
+  balEl.className = 'v ' + (inc - exp > 0 ? 'ok' : inc - exp < 0 ? 'bad' : '');
+
+  const months = Array.from(new Set(DB.ledger.map(r => monthOf(r.date)).concat([curM]))).sort().reverse();
+  if (months.indexOf(ledMonth) < 0) ledMonth = curM;
+  const sel = $('#ledMonthSel');
+  sel.innerHTML = months.map(m => '<option value="' + m + '">' + monthLabel(m) + '</option>').join('');
+  sel.value = ledMonth;
+
+  const rows = DB.ledger
+    .filter(r => monthOf(r.date) === ledMonth)
+    .sort((a, b) => b.date.localeCompare(a.date) || (b.created || 0) - (a.created || 0));
+
+  const mIn = ledgerSum(rows, 'in'), mOut = ledgerSum(rows, 'out');
+  $('#ledMonthCount').textContent = rows.length + ' 笔';
+  $('#ledMonthIn').textContent = '收入 ' + money(mIn);
+  $('#ledMonthOut').textContent = '支出 ' + money(mOut);
+  $('#ledMonthBal').textContent = '结余 ' + money(mIn - mOut);
+
+  $('#ledList').innerHTML = rows.length ? rows.map(r => {
+    const isIn = r.type === 'in';
+    return `
+    <div class="item">
+      <div class="main">
+        <div class="l1">
+          <b>${esc(r.cat || (isIn ? '未填写来源' : UNCAT))}</b>
+          <span class="pill ${isIn ? 'in' : 'out'}">${isIn ? '收入' : '支出'}</span>
+          <span class="amt ${isIn ? 'in' : 'out'}">${isIn ? '+' : '-'}${money(r.amount)}</span>
+        </div>
+        <div class="meta">${esc(r.date)} · ${weekName(r.date)}${r.note ? ' · ' + esc(r.note) : ''}</div>
+      </div>
+      <div class="acts">
+        <button class="mini" data-act="edit-ledger" data-id="${r.id}">编辑</button>
+        <button class="mini danger" data-act="del-ledger" data-id="${r.id}">删除</button>
+      </div>
+    </div>`;
+  }).join('') : `<div class="empty"><span class="big">📒</span>${monthLabel(ledMonth)}还没有账目记录</div>`;
+}
+$('#ledMonthSel').addEventListener('change', e => { ledMonth = e.target.value; renderLedger(); drawPie(); });
+
+/* ---------- Canvas 支出分类饼图 ---------- */
+function drawPie() {
+  /* 1) 先汇总所选月份的支出分类，渲染提示与图例（不依赖画布宽度） */
+  const map = new Map();
+  DB.ledger.forEach(r => {
+    if (r.type !== 'out' || monthOf(r.date) !== ledMonth) return;
+    const k = (r.cat || '').trim() || UNCAT;
+    map.set(k, (map.get(k) || 0) + Number(r.amount || 0));
+  });
+  const items = Array.from(map.entries())
+    .map(pair => ({ name: pair[0], val: pair[1] }))
+    .sort((a, b) => b.val - a.val);
+  const total = items.reduce((a, b) => a + b.val, 0);
+
+  $('#pieHint').textContent = monthLabel(ledMonth) + '支出合计 ' + money(total);
+  $('#pieLegend').innerHTML = total > 0
+    ? items.map((it, i) => `
+    <div class="li">
+      <span class="dot" style="background:${PIE_COLORS[i % PIE_COLORS.length]}"></span>
+      <span class="nm">${esc(it.name)}</span>
+      <span class="pc">${((it.val / total) * 100).toFixed(1)}%</span>
+      <span class="vv">${money(it.val)}</span>
+    </div>`).join('')
+    : '<div class="li muted">记账后这里会显示各分类占比</div>';
+
+  /* 2) 再绘制环形图 */
+  const cv = $('#pieChart');
+  if (!cv || !cv.parentElement) return;
+  const cssW = cv.parentElement.clientWidth;
+  if (cssW < 60) return;
+  const cssH = 200, dpr = window.devicePixelRatio || 1;
+  cv.width = Math.round(cssW * dpr);
+  cv.height = Math.round(cssH * dpr);
+  const ctx = cv.getContext('2d');
+  if (!ctx) return;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, cssW, cssH);
+
+  const cs = getComputedStyle(document.documentElement);
+  const cText  = cs.getPropertyValue('--sub').trim() || '#7B8CA3';
+  const cText2 = cs.getPropertyValue('--text').trim() || '#26313F';
+  const cCard  = cs.getPropertyValue('--card').trim() || '#FFFFFF';
+  const font = 'PingFang SC, Microsoft YaHei, system-ui, sans-serif';
+
+  if (total <= 0) {
+    ctx.fillStyle = cText;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '13px ' + font;
+    ctx.fillText('该月暂无支出记录', cssW / 2, cssH / 2);
+    return;
+  }
+
+  const cx = cssW / 2, cy = cssH / 2, R = Math.min(cssW, cssH) / 2 - 8;
+  let ang = -Math.PI / 2;
+  items.forEach((it, i) => {
+    const sweep = (it.val / total) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, R, ang, ang + sweep);
+    ctx.closePath();
+    ctx.fillStyle = PIE_COLORS[i % PIE_COLORS.length];
+    ctx.fill();
+    ctx.strokeStyle = cCard;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ang += sweep;
+  });
+
+  /* 中空圆 + 中心文字 */
+  ctx.beginPath();
+  ctx.arc(cx, cy, R * 0.56, 0, Math.PI * 2);
+  ctx.fillStyle = cCard;
+  ctx.fill();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = cText;
+  ctx.font = '11px ' + font;
+  ctx.fillText('本月支出', cx, cy - 11);
+  ctx.fillStyle = cText2;
+  ctx.font = 'bold 15px ' + font;
+  ctx.fillText(money(total), cx, cy + 9);
+}
+window.addEventListener('resize', () => { if (current === 'ledger') drawPie(); });
+
+/* ==================================================================
+   模块三：工作（上下班时长，无加班）
+   ================================================================== */
+const recWork = r => durMin(r.start, r.end);
+
+function workFormHTML(rec) {
+  return `
+    <label class="fl"><span>日期 *</span>
+      <input type="date" id="f_date" value="${esc(rec ? rec.date : todayStr())}">
+    </label>
+    <div class="grid2">
+      <label class="fl"><span>上班时间 *</span>
+        <input type="time" id="f_start" value="${esc(rec ? rec.start : '09:00')}">
+      </label>
+      <label class="fl"><span>下班时间 *</span>
+        <input type="time" id="f_end" value="${esc(rec ? rec.end : '18:00')}">
+      </label>
+    </div>
+    <p class="sub">下班时间早于上班时间，按跨天（次日）计算工作时长。</p>`;
+}
+function openWorkForm(id) {
+  const rec = id ? DB.work.find(r => r.id === id) : null;
+  openModal(rec ? '编辑工时记录' : '新增工时记录', workFormHTML(rec), () => {
+    const date = $('#f_date').value;
+    const start = $('#f_start').value, end = $('#f_end').value;
+    if (!date) { toast('请选择日期'); return false; }
+    if (!start || !end) { toast('请填写上班与下班时间'); return false; }
+    const data = { date, start, end };
+    if (rec) Object.assign(rec, data);
+    else DB.work.push(Object.assign({ id: uid(), created: Date.now() }, data));
+    persist('work');
+    renderWork(); renderHome();
+    toast(rec ? '已更新工时记录' : '已新增工时记录');
+  });
+}
+
+let workSeg = 'week';
+function renderWork() {
+  const today = todayStr();
+  const ws = weekStartOf(today), curM = monthOf(today);
+
+  const weekRows = DB.work.filter(r => weekStartOf(r.date) === ws);
+  const monthRows = DB.work.filter(r => monthOf(r.date) === curM);
+  const sum = arr => arr.reduce((a, b) => a + recWork(b), 0);
+  $('#wkWork').innerHTML = hoursText(sum(weekRows)) + '<span class="u">小时</span>';
+  $('#moWork').innerHTML = hoursText(sum(monthRows)) + '<span class="u">小时</span>';
+  $('#workCount2').innerHTML = DB.work.length + '<span class="u">天</span>';
+
+  /* 汇总列表 */
+  const map = new Map();
+  DB.work.forEach(r => {
+    const key = workSeg === 'week' ? weekStartOf(r.date) : monthOf(r.date);
+    if (!map.has(key)) map.set(key, { min: 0, n: 0 });
+    const it = map.get(key);
+    it.min += recWork(r); it.n++;
+  });
+  const keys = Array.from(map.keys()).sort().reverse();
+  $('#workSum').innerHTML = keys.length ? keys.map(k => {
+    const it = map.get(k);
+    const name = workSeg === 'week' ? weekLabel(k) : monthLabel(k);
+    return `
+    <div class="sum-row">
+      <span class="n">${esc(name)}</span>
+      <span class="d">${it.n} 天</span>
+      <span class="v">${fmtDur(it.min)}</span>
+    </div>`;
+  }).join('') : '<div class="empty"><span class="big">⏱️</span>还没有工时记录</div>';
+
+  /* 历史记录 */
+  const rows = DB.work.slice().sort((a, b) => b.date.localeCompare(a.date) || (b.created || 0) - (a.created || 0));
+  $('#workCount').textContent = rows.length + ' 条';
+  $('#workList').innerHTML = rows.length ? rows.map(r => `
+    <div class="item">
+      <div class="main">
+        <div class="l1">
+          <b>${esc(r.date)} ${weekName(r.date)}</b>
+          <span class="pill">${fmtDur(recWork(r))}</span>
+        </div>
+        <div class="meta">上班 ${esc(r.start)} - 下班 ${esc(r.end)}</div>
+      </div>
+      <div class="acts">
+        <button class="mini" data-act="edit-work" data-id="${r.id}">编辑</button>
+        <button class="mini danger" data-act="del-work" data-id="${r.id}">删除</button>
+      </div>
+    </div>`).join('') : '<div class="empty"><span class="big">⏱️</span>还没有工时记录，点击上方按钮添加</div>';
+}
+$('#workSeg').addEventListener('click', e => {
+  const b = e.target.closest('button[data-seg]');
+  if (!b) return;
+  workSeg = b.dataset.seg;
+  $$('#workSeg button').forEach(x => x.classList.toggle('on', x === b));
+  renderWork();
+});
+
+/* ==================================================================
+   模块四：密码管理
+   ================================================================== */
+let pwQuery = '';
+const revealed = new Set();          // 当前明文显示的记录 id
+const maskOf = p => '•'.repeat(Math.min(Math.max(String(p || '').length, 6), 14));
+
+function pwFormHTML(rec) {
+  return `
+    <label class="fl"><span>平台名称 *</span>
+      <input type="text" id="f_platform" maxlength="30" placeholder="如：微信 / 淘宝 / 公司邮箱" value="${rec ? esc(rec.platform) : ''}">
+    </label>
+    <label class="fl"><span>账号</span>
+      <input type="text" id="f_account" maxlength="60" placeholder="手机号 / 邮箱 / 用户名" autocomplete="off" value="${rec ? esc(rec.account) : ''}">
+    </label>
+    <label class="fl"><span>密码 *</span>
+      <div class="pw-wrap">
+        <input type="password" id="f_password" maxlength="60" placeholder="请输入密码" autocomplete="new-password" value="${rec ? esc(rec.password) : ''}">
+        <button type="button" class="mini tiny" id="fPwEye">显示</button>
+      </div>
+    </label>
+    <label class="fl"><span>备注</span>
+      <textarea id="f_note" maxlength="100" rows="2" placeholder="选填，如密保问题">${rec ? esc(rec.note) : ''}</textarea>
+    </label>`;
+}
+function openPwForm(id) {
+  const rec = id ? DB.pw.find(r => r.id === id) : null;
+  openModal(rec ? '编辑账号信息' : '新增账号信息', pwFormHTML(rec), () => {
+    const platform = $('#f_platform').value.trim();
+    const account  = $('#f_account').value.trim();
+    const password = $('#f_password').value;
+    const note     = $('#f_note').value.trim();
+    if (!platform) { toast('请填写平台名称'); return false; }
+    if (!password) { toast('请填写密码'); return false; }
+    if (rec) Object.assign(rec, { platform, account, password, note });
+    else DB.pw.push({ id: uid(), platform, account, password, note, created: Date.now() });
+    persist('pw');
+    renderPw();
+    toast(rec ? '已更新账号信息' : '已新增账号信息');
+  });
+}
+
+function renderPw() {
+  const q = pwQuery.trim().toLowerCase();
+  const rows = DB.pw
+    .filter(r => !q || [r.platform, r.account, r.note].some(v => String(v || '').toLowerCase().indexOf(q) > -1))
+    .sort((a, b) => String(a.platform || '').localeCompare(String(b.platform || ''), 'zh'));
+
+  $('#pwCount').textContent = rows.length + ' 条' + (q ? '（已筛选）' : '');
+  $('#pwList').innerHTML = rows.length ? rows.map(r => {
+    const shown = revealed.has(r.id);
+    return `
+    <div class="item">
+      <div class="main">
+        <div class="l1"><b>🔐 ${esc(r.platform)}</b></div>
+        <div class="meta">账号：${esc(r.account || '未填写')}</div>
+        <div class="meta" style="display:flex;align-items:center;gap:8px;margin-top:5px">
+          <span style="word-break:break-all" id="pwv-${r.id}">${esc(shown ? r.password : maskOf(r.password))}</span>
+          <button class="mini tiny" data-act="eye" data-id="${r.id}">${shown ? '隐藏' : '查看'}</button>
+        </div>
+        ${r.note ? '<div class="meta">备注：' + esc(r.note) + '</div>' : ''}
+        <div class="row" style="margin-top:8px">
+          <button class="mini" data-act="copy-acc" data-id="${r.id}">复制账号</button>
+          <button class="mini" data-act="copy-pw" data-id="${r.id}">复制密码</button>
+        </div>
+      </div>
+      <div class="acts">
+        <button class="mini" data-act="edit-pw" data-id="${r.id}">编辑</button>
+        <button class="mini danger" data-act="del-pw" data-id="${r.id}">删除</button>
+      </div>
+    </div>`;
+  }).join('') : `<div class="empty"><span class="big">🔐</span>${q ? '没有匹配的账号记录' : '还没有保存任何账号，点击上方新增'}</div>`;
+}
+$('#pwSearch').addEventListener('input', e => { pwQuery = e.target.value; renderPw(); });
+
+/* ==================================================================
+   统一事件委托：快捷入口 / 新增 / 编辑 / 删除 / 查看 / 复制
+   ================================================================== */
+document.addEventListener('click', e => {
+  const btn = e.target.closest('[data-act]');
+  if (!btn) return;
+  const act = btn.dataset.act;
+  const id  = btn.dataset.id;
+
+  switch (act) {
+    case 'go':
+      go(btn.dataset.view);
+      break;
+
+    /* ---- 账本 ---- */
+    case 'add-in':  openLedgerForm('in'); break;
+    case 'add-out': openLedgerForm('out'); break;
+    case 'edit-ledger': openLedgerForm(null, id); break;
+    case 'del-ledger': {
+      const r = DB.ledger.find(x => x.id === id);
+      if (!r) break;
+      const isIn = r.type === 'in';
+      askConfirm('确定删除这条' + (isIn ? '收入' : '支出') + '记录（' + (r.cat || UNCAT) + ' ' + money(r.amount) + '）吗？删除后无法恢复。', () => {
+        DB.ledger = DB.ledger.filter(x => x.id !== id);
+        persist('ledger'); renderLedger(); drawPie(); renderHome();
+        toast('已删除账目');
+      });
+      break;
+    }
+
+    /* ---- 工作 ---- */
+    case 'add-work':  openWorkForm(); break;
+    case 'edit-work': openWorkForm(id); break;
+    case 'del-work': {
+      const r = DB.work.find(x => x.id === id);
+      if (!r) break;
+      askConfirm('确定删除「' + r.date + ' ' + r.start + '-' + r.end + '」这条工时记录吗？', () => {
+        DB.work = DB.work.filter(x => x.id !== id);
+        persist('work'); renderWork(); renderHome();
+        toast('已删除工时记录');
+      });
+      break;
+    }
+
+    /* ---- 密码管理 ---- */
+    case 'add-pw':  openPwForm(); break;
+    case 'edit-pw': openPwForm(id); break;
+    case 'del-pw': {
+      const r = DB.pw.find(x => x.id === id);
+      if (!r) break;
+      askConfirm('确定删除「' + r.platform + '」的账号信息吗？删除后无法恢复。', () => {
+        DB.pw = DB.pw.filter(x => x.id !== id);
+        revealed.delete(id);
+        persist('pw'); renderPw();
+        toast('已删除账号信息');
+      });
+      break;
+    }
+    case 'eye': {
+      const r = DB.pw.find(x => x.id === id);
+      if (!r) break;
+      const on = !revealed.has(id);
+      on ? revealed.add(id) : revealed.delete(id);
+      const span = $('#pwv-' + id);
+      if (span) span.textContent = on ? r.password : maskOf(r.password);
+      btn.textContent = on ? '隐藏' : '查看';
+      break;
+    }
+    case 'copy-acc': {
+      const r = DB.pw.find(x => x.id === id);
+      if (!r) break;
+      if (!r.account) { toast('该记录未填写账号'); break; }
+      copyText(r.account, '账号');
+      break;
+    }
+    case 'copy-pw': {
+      const r = DB.pw.find(x => x.id === id);
+      if (!r) break;
+      copyText(r.password, '密码');
+      break;
+    }
+  }
+});
+
+/* ==================================================================
+   初始化
+   ================================================================== */
+(function init() {
+  applyTheme(localStorage.getItem(KEYS.theme) === 'dark' ? 'dark' : 'light');
+  loadAll();
+  renderHome();
+  renderLedger();
+  renderWork();
+  renderPw();
+  tickClock();
+  setInterval(tickClock, 1000);
+  requestAnimationFrame(() => { if (current === 'ledger') drawPie(); });
+  setTimeout(() => { if (current === 'ledger') drawPie(); }, 220);
+})();
+</script>
+</body>
+</html>
