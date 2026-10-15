@@ -2,7 +2,7 @@
 <html lang="zh-CN" data-theme="light">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#EEF5FE">
 <title>小高工作台</title>
 <style>
@@ -42,10 +42,11 @@ html[data-theme="dark"]{
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* 禁止手机内核放大字号撑破布局 */
+html,body{max-width:100%}                                 /* 兜底：防止任何元素把页面撑宽 */
 body{
   font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",system-ui,-apple-system,sans-serif;
   background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;
-  overflow-x:hidden;
+  overflow-x:hidden;max-width:100vw;
   background-image:radial-gradient(rgba(111,176,245,.14) 1.5px,transparent 1.5px);
   background-size:24px 24px;
   font-size:15px;line-height:1.5;
@@ -244,8 +245,11 @@ label.fl{display:block;font-size:13px;color:var(--sub);margin-bottom:11px}
 label.fl>span{display:block;margin-bottom:5px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .grid2>*{min-width:0}   /* 允许日期/时间控件收缩到轨道宽度内，避免撑破弹窗 */
-/* 原生的日期/时间控件在移动端有较大的固有宽度，强制其跟随容器伸缩 */
+/* 只强制 input 本身跟随容器伸缩，不再干掉 iOS 原生日历/时间按钮 —— 那个按钮是 iOS
+   UIDatePicker 能被唤起的内部机制，display:none 会直接让点了没反应 */
 input[type="date"],input[type="time"]{width:100%;min-width:0;max-width:100%}
+/* select 在 iOS 上也有原生下拉箭头与自定义 background-image 叠加，把原生的也遮掉 */
+select::-ms-expand{display:none}
 /* 超窄屏（≤359px）把并排的日期/时间字段改为单列，彻底避免横向溢出 */
 @media(max-width:359px){
   .grid2{grid-template-columns:1fr}
