@@ -41,9 +41,11 @@ html[data-theme="dark"]{
   --shadow:0 8px 22px rgba(0,0,0,.40);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}   /* 禁止手机内核放大字号撑破布局 */
 body{
   font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",system-ui,-apple-system,sans-serif;
   background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
   background-image:radial-gradient(rgba(111,176,245,.14) 1.5px,transparent 1.5px);
   background-size:24px 24px;
   font-size:15px;line-height:1.5;
@@ -226,7 +228,9 @@ html[data-theme="dark"] .pill.out{background:rgba(232,120,111,.22);color:#F0A39D
 
 /* ==================== 表单控件 ==================== */
 input,select,textarea{
-  width:100%;min-height:46px;padding:9px 11px;font-size:15px;font-family:inherit;
+  width:100%;min-width:0;max-width:100%;min-height:46px;padding:9px 11px;font-family:inherit;
+  /* 16px：小于 16px 时 iOS 聚焦输入框会自动放大整页，表现为屏幕溢出 */
+  font-size:16px;
   color:var(--text);background:var(--field);border:1.5px solid var(--line);border-radius:11px;outline:none;
   transition:border-color .15s;
 }
@@ -239,6 +243,13 @@ select{appearance:none;
 label.fl{display:block;font-size:13px;color:var(--sub);margin-bottom:11px}
 label.fl>span{display:block;margin-bottom:5px}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid2>*{min-width:0}   /* 允许日期/时间控件收缩到轨道宽度内，避免撑破弹窗 */
+/* 原生的日期/时间控件在移动端有较大的固有宽度，强制其跟随容器伸缩 */
+input[type="date"],input[type="time"]{width:100%;min-width:0;max-width:100%}
+/* 超窄屏（≤359px）把并排的日期/时间字段改为单列，彻底避免横向溢出 */
+@media(max-width:359px){
+  .grid2{grid-template-columns:1fr}
+}
 .pw-wrap{position:relative}
 .pw-wrap>input{padding-right:64px}
 .pw-wrap>button{position:absolute;right:7px;top:50%;transform:translateY(-50%)}
@@ -276,14 +287,14 @@ html[data-theme="dark"] .sum-row .v{color:var(--accent)}
 }
 .modal-mask.show{opacity:1;pointer-events:auto}
 .modal{
-  width:100%;max-width:520px;background:var(--card);border-radius:20px 20px 0 0;
+  width:100%;max-width:520px;min-width:0;background:var(--card);border-radius:20px 20px 0 0;
   border:1px solid var(--line);border-bottom:none;max-height:88vh;display:flex;flex-direction:column;
   transform:translateY(14px);transition:transform .24s cubic-bezier(.4,0,.2,1);
 }
 .modal-mask.show .modal{transform:none}
 .modal-head{display:flex;align-items:center;gap:8px;padding:14px 14px 10px;border-bottom:1px solid var(--line)}
 .modal-head b{font-size:16px;flex:1}
-.modal-body{padding:14px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.modal-body{padding:14px;min-width:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .modal-foot{display:flex;gap:10px;padding:10px 14px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
 .modal-foot .btn{flex:1}
 @media(min-width:600px){
